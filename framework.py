@@ -1,4 +1,5 @@
 import requests
+from constants import URL_NAME
 
 
 class Parser:
@@ -68,7 +69,7 @@ class Parser:
             self.json_data.setdefault(key, value)
 
     def related_profile(self, key, value):
-        url = "https://catalog-test.prozorro.ua/api/0/profiles/{profile_id}".format(profile_id=value)
+        url = URL_NAME + "/api/0/profiles/{profile_id}".format(profile_id=value)
         response = self.session.get(url)
         json_response = response.json()
         criteries = json_response.get("data", {}).get("criteria", [])

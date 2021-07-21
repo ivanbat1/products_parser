@@ -1,14 +1,16 @@
 import requests
 from openpyxl import load_workbook
+
+from constants import URL_NAME, XLSX_FILE_NAME, SHEET_NAME, AUTH
 from framework import Parser
 
 
-wb = load_workbook(filename='Products.xlsx')
-ws = wb['example']
+wb = load_workbook(filename=XLSX_FILE_NAME)
+ws = wb[SHEET_NAME]
 
 parser = Parser(ws)
 session = requests.Session()
-session.auth = ('12345678', 'selftest')
+session.auth = AUTH
 result = []
 
 
@@ -40,6 +42,9 @@ if __name__ == "__main__":
 
     for res in result[1:]:
         product_id = res["data"]["id"]
-        url = "https://catalog-test.prozorro.ua/api/0/products/{product_id}".format(product_id=product_id)
+        url = URL_NAME + "/api/0/products/{product_id}".format(product_id=product_id)
         response = session.put(url, json=res)
-        print(response.json())
+        if response.status_code == 201:
+            continue
+        message = response.json().get("error", {}).get("message")
+        print("{} : {}".format(product_id, message))
