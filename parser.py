@@ -1,5 +1,4 @@
 import requests
-import pprint
 from openpyxl import load_workbook
 from framework import Parser
 
@@ -29,7 +28,6 @@ def main():
             method = parser.get_method_by_key(key)
             if method:
                 method(key, value)
-        pprint.pprint(parser.json_data)
         data = {
             "access": parser.json_access,
             "data": parser.json_data
