@@ -1,50 +1,59 @@
 import requests
 from openpyxl import load_workbook
-
 from constants import URL_NAME, XLSX_FILE_NAME, SHEET_NAME, AUTH
 from framework import Parser
 
 
-wb = load_workbook(filename=XLSX_FILE_NAME)
-ws = wb[SHEET_NAME]
+class Products:
+    products_data = []
+    
+    def __init__(self, ws):
+        self.ws = ws
+        self.parser = Parser(ws)
+        self.session = requests.Session()
+        self.session.auth = AUTH
 
-parser = Parser(ws)
-session = requests.Session()
-session.auth = AUTH
-result = []
-
-
-def main():
-    for row in ws.rows:
-        parser.json_data = {"status": "active"}
-        parser.json_access = {}
-        for cell in row:
-            value = cell.value
-            if value is None:
-                break
-            key = parser.get_key(cell)
-            if value == "true":
-                value = True
-            elif value == "false":
-                value = False
-            method = parser.get_method_by_key(key)
-            if method:
-                method(key, value)
-        data = {
-            "access": parser.json_access,
-            "data": parser.json_data
-        }
-        result.append(data)
+    def parse_file(self):
+        for row in self.ws.rows:
+            self.parser.json_data = {"status": "active"}
+            self.parser.json_access = {}
+            for cell in row:
+                value = cell.value
+                if value is None:
+                    break
+                key = self.parser.get_key(cell)
+                if value == "true":
+                    value = True
+                elif value == "false":
+                    value = False
+                method = self.parser.get_method_by_key(key)
+                if method:
+                    method(key, value)
+            data = {
+                "access": self.parser.json_access,
+                "data": self.parser.json_data
+            }
+            self.products_data.append(data)
+    
+    def create_items(self):
+        for res in self.products_data[1:]:
+            product_id = res["data"]["id"]
+            url = URL_NAME + "/api/0/products/{product_id}".format(product_id=product_id)
+            response = self.session.put(url, json=res)
+            if response.status_code >= 500:
+                print("put product status_code {}".format(response.status_code))
+                continue
+            message = response.json().get("error", {}).get("message")
+            if response.status_code == 201:
+                message = "Create"
+            log = "{} : {}".format(product_id, message)
+            print(log)
 
 
 if __name__ == "__main__":
-    main()
+    wb = load_workbook(filename=XLSX_FILE_NAME)
+    ws = wb[SHEET_NAME]
+    products = Products(ws)
+    products.parse_file()
+    products.create_items()
 
-    for res in result[1:]:
-        product_id = res["data"]["id"]
-        url = URL_NAME + "/api/0/products/{product_id}".format(product_id=product_id)
-        response = session.put(url, json=res)
-        if response.status_code == 201:
-            continue
-        message = response.json().get("error", {}).get("message")
-        print("{} : {}".format(product_id, message))

@@ -1,5 +1,5 @@
 import requests
-from constants import URL_NAME
+from constants import URL_NAME, AUTH
 
 
 class Parser:
@@ -11,6 +11,7 @@ class Parser:
     def __init__(self, ws):
         self.ws = ws
         self.session = requests.Session()
+        self.session.auth = AUTH
 
     def get_key(self, cell):
         col = cell.col_idx
@@ -18,8 +19,10 @@ class Parser:
         return key.strip()
 
     def get_method_by_key(self, key):
-        if key is None or "image" in key:
+        if key is None:
             return
+        elif "image" in key:
+            return self.parse_image
         elif "access" in key:
             return self.access
         elif key == "relatedProfile":
@@ -33,6 +36,14 @@ class Parser:
         else:
             return self.parse_key
 
+    def parse_image(self, key, value):
+        self.json_data.setdefault("images", [])
+        data = {
+            "url": value,
+            "sizes": "800x800"
+        }
+        self.json_data["images"].append(data)
+
     def requirement_responses(self, key, value):
         self.json_data.setdefault("requirementResponses", [])
         self.json_data["requirementResponses"].append({
@@ -40,7 +51,6 @@ class Parser:
             "value": value,
             "id": self.code_by_id.get(key)
         })
-        pass
 
     def additional_properties(self, key, value):
         head_key, second_key = key.strip().split(":")
@@ -71,6 +81,9 @@ class Parser:
     def related_profile(self, key, value):
         url = URL_NAME + "/api/0/profiles/{profile_id}".format(profile_id=value)
         response = self.session.get(url)
+        if response.status_code != 200:
+            print("profile status_code = {}".format(response.status_code))
+            return
         json_response = response.json()
         criteries = json_response.get("data", {}).get("criteria", [])
         for criteria in criteries:
