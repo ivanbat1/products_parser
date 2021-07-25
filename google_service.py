@@ -13,7 +13,7 @@ from google.oauth2.credentials import Credentials
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 class GoogleAPIServie:
-    service = None
+    google_service = None
     sizes = '800x800'
 
     def __init__(self, session):
@@ -41,16 +41,17 @@ class GoogleAPIServie:
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
 
-        self.service = build('drive', 'v3', credentials=creds)
+        self.google_service = build('drive', 'v3', credentials=creds)
 
     def get_file(self, file_id, title):
-        request = self.service.files().get_media(fileId=file_id)
+        request = self.google_service.files().get_media(fileId=file_id)
         fh = io.FileIO('images/' + title + '.png', mode='w+')
         downloader = MediaIoBaseDownload(fh, request)
         done = False
         while done is False:
             status, done = downloader.next_chunk()
-            print ("Download %d%%." % int(status.progress() * 100))
+            load_percents = int(status.progress() * 100)
+            print ("Download {}%. {} {}".format(load_percents, file_id, title))
 
     def load_file_to_catalog(self, title):
         url = URL_NAME + '/api/0/images'
@@ -59,7 +60,7 @@ class GoogleAPIServie:
             'sizes': self.sizes
         }
         req = self.session.post(url,
-                                data=json_data,
+                                json=json_data,
                                 files={'image': open('images/' + title + '.png', 'rb')})
         if req.status_code == 201:
             local_catalog_image_url = req.json().get('data', {}).get('uri')
@@ -68,11 +69,3 @@ class GoogleAPIServie:
         else:
             print(req.text)
             return
-
-#if __name__ == '__main__':
-#    session = requests.Session()
-#    session.auth = AUTH
-#    service = GoogleAPIServie(session)
-#    service.main()
-#    service.get_file('1Ysq9jKaOj8Mi87YYDe2_Ujzw86ht5cRV', 'Ivan_test')
-#    service.load_file_to_catalog('Ivan_test')
