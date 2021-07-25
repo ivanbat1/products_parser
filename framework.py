@@ -1,5 +1,6 @@
 import requests
 from constants import URL_NAME, AUTH
+from google_service import GoogleAPIServie
 
 
 class Parser:
@@ -12,6 +13,8 @@ class Parser:
         self.ws = ws
         self.session = requests.Session()
         self.session.auth = AUTH
+        self.google_service = GoogleAPIServie(self.session)
+        self.google_service.main()
 
     def get_key(self, cell):
         col = cell.col_idx
@@ -37,9 +40,22 @@ class Parser:
             return self.parse_key
 
     def parse_image(self, key, value):
+        if value == "images:url":
+            return
+        value = value.split('|')
+        title = value[-1]
+        file_id = value[0].split('id=')[-1]   
+        try:
+            self.google_service.get_file(file_id, title)
+        except Exceptions as ex:
+            print(ex)
+            return
+        catalog_image_path = self.google_service.load_file_to_catalog('Ivan_test')
+        if catalog_image_path is None:
+            return
         self.json_data.setdefault("images", [])
         data = {
-            "url": value,
+            "url": catalog_image_path,
             "sizes": "800x800"
         }
         self.json_data["images"].append(data)

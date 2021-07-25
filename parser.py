@@ -33,27 +33,31 @@ class Products:
                 "access": self.parser.json_access,
                 "data": self.parser.json_data
             }
+            print('parse {}'.format(data.get("data", {}).get("id")))
             self.products_data.append(data)
     
     def create_items(self):
         for res in self.products_data[1:]:
-            product_id = res["data"]["id"]
+            product_id = res.get("data", {}).get("id")
             url = URL_NAME + "/api/0/products/{product_id}".format(product_id=product_id)
             response = self.session.put(url, json=res)
             if response.status_code >= 500:
                 print("put product status_code {}".format(response.status_code))
                 continue
-            message = response.json().get("error", {}).get("message")
+            json_resp = response.json()
+            message = json_resp.get("error", {}).get("message")
             if response.status_code == 201:
-                message = "Create"
+                access_token = json_resp.get("access", {}).get("token")
+                message = "Create {}".format(access_token)
             log = "{} : {}".format(product_id, message)
             print(log)
 
 
 if __name__ == "__main__":
     wb = load_workbook(filename=XLSX_FILE_NAME)
-    ws = wb[SHEET_NAME]
-    products = Products(ws)
-    products.parse_file()
-    products.create_items()
+    #ws = wb[SHEET_NAME]
+    for ws in wb:
+        products = Products(ws)
+        products.parse_file()
+        products.create_items()
 
