@@ -1,73 +1,98 @@
+import logging
 import requests
 from constants import URL_NAME, AUTH
 from google_service import GoogleAPIServie
 
+logger = logging.getLogger("root")
+
 
 class Parser:
-
     json_data = {}
     json_access = {}
-    code_by_id = {}
+    requirement_responses_code_by_requirement = {}
+    sizes = "800x800"
+    url_profiles = URL_NAME + "profiles/{profile_id}"
+    url_images = URL_NAME + "images"
 
     def __init__(self, ws):
         self.ws = ws
         self.session = requests.Session()
         self.session.auth = AUTH
         self.google_service = GoogleAPIServie(self.session)
-        self.google_service.main()
+        self.google_service.create()
 
     def get_key(self, cell):
         col = cell.col_idx
         key = self.ws.cell(1, col).value
         return key.strip()
 
+    def split_key(self, key):
+        return key.split(":")
+
     def get_method_by_key(self, key):
         if key is None:
             return
         elif "image" in key:
-            return self.parse_image
+            return self.parse_image_from_google_drive
         elif "access" in key:
-            return self.access
+            return self.parse_access
         elif key == "relatedProfile":
-            return self.related_profile
+            return self.parse_related_profile
         elif "alternativeNames" in key:
-            return self.alternative_names
+            return self.parse_alternative_names
         elif "additionalProperties" in key or "additionalClassifications" in key or "alternativeIdentifiers" in key:
-            return self.additional_properties
+            return self.parse_additional_properties
         elif key[0].isdigit():
-            return self.requirement_responses
+            return self.parse_requirement_responses
         else:
-            return self.parse_key
+            return self.parse_key_without_specifics
 
-    def parse_image(self, key, value):
-        if value == "images:url":
+    def load_image_to_catalog(self, title):
+        url = self.url_images
+        image_data = {
+            "title": title,
+            "sizes": self.sizes,
+        }
+        logger.info(image_data)
+        response = self.session.post(url,
+                                     data=image_data,
+                                     files={"image": open('images/' + title, 'rb')}
+                                     )
+        if response.status_code == 201:
+            local_catalog_image_url = response.json().get('data', {}).get('uri')
+            logger.info(response.json())
+            return local_catalog_image_url
+        else:
+            logger.info(response.content)
             return
-        file_id = value.split('id=')[-1]   
+
+    def parse_image_from_google_drive(self, key, value):
+        image_id = value.split('id=')[-1]
         try:
-            file_name = self.google_service.get_file(file_id)
+            image_name = self.google_service.get_image(image_id)
         except Exception as ex:
-            print(ex)
+            logger.error(ex)
             return
-        catalog_image_path = self.google_service.load_file_to_catalog(file_name)
+        catalog_image_path = self.load_image_to_catalog(image_name)
         if catalog_image_path is None:
             return
         self.json_data.setdefault("images", [])
-        data = {
+        image_data = {
             "url": catalog_image_path,
-            "sizes": "800x800"
+            "sizes": self.sizes
         }
-        self.json_data["images"].append(data)
+        self.json_data["images"].append(image_data)
 
-    def requirement_responses(self, key, value):
+    def parse_requirement_responses(self, key, value):
         self.json_data.setdefault("requirementResponses", [])
         self.json_data["requirementResponses"].append({
             "requirement": key,
             "value": value,
-            "id": self.code_by_id.get(key)
+            "id": self.requirement_responses_code_by_requirement.get(key)
         })
 
-    def additional_properties(self, key, value):
-        head_key, second_key = key.strip().split(":")
+    def parse_additional_properties(self, key, value):
+        head_key, second_key = self.split_key(key)
         self.json_data.setdefault(head_key, [])
         properties = self.json_data[head_key]
         if not properties:
@@ -78,25 +103,24 @@ class Parser:
             else:
                 properties.append({second_key: value})
 
-    def alternative_names(self, key, value):
-        head_key, second_key = key.strip().split(":")
+    def parse_alternative_names(self, key, value):
+        head_key, second_key = self.split_key(key)
         self.json_data.setdefault(head_key, {}).setdefault(second_key, [])
         self.json_data[head_key][second_key].append(value)
 
-    def parse_key(self, key, value):
-        key = key.strip()
+    def parse_key_without_specifics(self, key, value):
         if ":" in key:
-            head_key, second_key = key.split(":")
+            head_key, second_key = self.split_key(key)
             self.json_data.setdefault(head_key, {})
             self.json_data[head_key][second_key] = str(value)
         else:
             self.json_data.setdefault(key, value)
 
-    def related_profile(self, key, value):
-        url = URL_NAME + "/api/0/profiles/{profile_id}".format(profile_id=value)
+    def parse_related_profile(self, key, value):
+        url = self.url_profiles.format(profile_id=value)
         response = self.session.get(url)
         if response.status_code != 200:
-            print("profile status_code = {}".format(response.status_code))
+            logger.info("profile {} status_code = {}".format(url, response.status_code))
             return
         json_response = response.json()
         criteries = json_response.get("data", {}).get("criteria", [])
@@ -105,9 +129,9 @@ class Parser:
             for requirement_group in criteria.get("requirementGroups"):
                 for requirement in requirement_group.get("requirements"):
                     requirement_id = requirement.get('id')
-                    self.code_by_id[requirement_id] = criteria_code
+                    self.requirement_responses_code_by_requirement[requirement_id] = criteria_code
         self.json_data.setdefault(key, value)
 
-    def access(self, key, value):
-        _, second_key = key.split(":")
+    def parse_access(self, key, value):
+        _, second_key = self.split_key(key)
         self.json_access.setdefault(second_key, str(value))
