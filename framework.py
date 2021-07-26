@@ -42,15 +42,13 @@ class Parser:
     def parse_image(self, key, value):
         if value == "images:url":
             return
-        value = value.split('|')
-        title = value[-1]
-        file_id = value[0].split('id=')[-1]   
+        file_id = value.split('id=')[-1]   
         try:
-            self.google_service.get_file(file_id, title)
-        except Exceptions as ex:
+            file_name = self.google_service.get_file(file_id)
+        except Exception as ex:
             print(ex)
             return
-        catalog_image_path = self.google_service.load_file_to_catalog('Ivan_test')
+        catalog_image_path = self.google_service.load_file_to_catalog(file_name)
         if catalog_image_path is None:
             return
         self.json_data.setdefault("images", [])

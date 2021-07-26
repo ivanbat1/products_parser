@@ -20,16 +20,9 @@ class GoogleAPIServie:
         self.session = session
 
     def main(self):
-        """Shows basic usage of the Drive v3 API.
-        Prints the names and ids of the first 10 files the user has access to.
-        """
         creds = None
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
         if os.path.exists('token.json'):
             creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-        # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
@@ -37,35 +30,38 @@ class GoogleAPIServie:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES)
                 creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
 
         self.google_service = build('drive', 'v3', credentials=creds)
 
-    def get_file(self, file_id, title):
+    def get_file(self, file_id):
         request = self.google_service.files().get_media(fileId=file_id)
-        fh = io.FileIO('images/' + title + '.png', mode='w+')
+        file = self.google_service.files().get(fileId=file_id).execute()
+        title = file["name"]
+        fh = io.FileIO('images/' + title, mode='wb')
         downloader = MediaIoBaseDownload(fh, request)
         done = False
         while done is False:
             status, done = downloader.next_chunk()
             load_percents = int(status.progress() * 100)
             print ("Download {}%. {} {}".format(load_percents, file_id, title))
+        return title
 
     def load_file_to_catalog(self, title):
         url = URL_NAME + '/api/0/images'
         json_data = {
-            'title': title,
-            'sizes': self.sizes
+            "title": title,
+            "sizes": self.sizes,
         }
+        print(json_data)
         req = self.session.post(url,
-                                json=json_data,
-                                files={'image': open('images/' + title + '.png', 'rb')})
+                                data=json_data,
+                                files={"image": open('images/' + title, 'rb')})
         if req.status_code == 201:
             local_catalog_image_url = req.json().get('data', {}).get('uri')
             print(req.json())
             return local_catalog_image_url
         else:
-            print(req.text)
+            print(req.content)
             return
