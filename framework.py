@@ -1,5 +1,7 @@
+import googleapiclient
 import requests
 from constants import URL_NAME, AUTH
+from google_api_connect import ParserGoogleDriveFile
 
 
 class Parser:
@@ -12,6 +14,8 @@ class Parser:
         self.ws = ws
         self.session = requests.Session()
         self.session.auth = AUTH
+        self.Parser_Google_Drive_File = ParserGoogleDriveFile(self.session)
+        self.Parser_Google_Drive_File.create_google_service()
 
     def get_key(self, cell):
         col = cell.col_idx
@@ -37,12 +41,19 @@ class Parser:
             return self.parse_key
 
     def parse_image(self, key, value):
+        id_google_file = value.split("id=")[-1]
+        print(id_google_file)
+        try:
+            self.Parser_Google_Drive_File.get_image_from_google(id_google_file, 'image_1010')
+        except googleapiclient.errors.HttpError as error:
+            print(error)
+            return
+        catalog_path_to_image = self.Parser_Google_Drive_File.load_image_to_catalog('image_1010')
         self.json_data.setdefault("images", [])
-        data = {
-            "url": value,
-            "sizes": "800x800"
-        }
-        self.json_data["images"].append(data)
+        self.json_data["images"].append({
+            'sizes': '800x800',
+            'url': catalog_path_to_image
+        })
 
     def requirement_responses(self, key, value):
         self.json_data.setdefault("requirementResponses", [])
