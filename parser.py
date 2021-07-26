@@ -34,7 +34,7 @@ class Products:
                 "data": self.parser.json_data
             }
             self.products_data.append(data)
-    
+
     def create_items(self):
         for res in self.products_data[1:]:
             product_id = res["data"]["id"]
