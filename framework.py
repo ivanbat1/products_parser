@@ -1,7 +1,7 @@
 import logging
 import requests
 from constants import URL_NAME, AUTH, IMAGES_FILE_PATH
-from google_service import GoogleAPIServie
+from google_service import GoogleAPIService
 
 logger = logging.getLogger("root")
 
@@ -18,7 +18,7 @@ class Parser:
         self.ws = ws
         self.session = requests.Session()
         self.session.auth = AUTH
-        self.google_service = GoogleAPIServie(self.session)
+        self.google_service = GoogleAPIService(self.session)
         self.google_service.create()
 
     def get_key(self, cell):

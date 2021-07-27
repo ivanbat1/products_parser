@@ -1,5 +1,4 @@
 from __future__ import print_function
-
 import logging
 import os.path
 import io
@@ -8,8 +7,6 @@ from googleapiclient.http import MediaIoBaseDownload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-
-# If modifying these scopes, delete the file token.json.
 from constants import IMAGES_FILE_PATH
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -17,7 +14,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 logger = logging.getLogger("root")
 
 
-class GoogleAPIServie:
+class GoogleAPIService:
     google_service = None
 
     def __init__(self, session):
