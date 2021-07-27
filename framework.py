@@ -68,7 +68,7 @@ class Parser:
             local_catalog_image_url = response.json().get('data', {}).get('url')
             logger.info(response.json())
             return local_catalog_image_url
-        elif response.status_code == 200 and "Image already exists" in response.json().get("error", {}).get("message", ""):
+        elif "Image already exists" in response.json().get("error", {}).get("message", ""):
             filename = secure_filename(image_name).lower()
             image_id = filename.replace('.', '_')
             url_get_image = "{}/{}".format(self.url_images, image_id)
