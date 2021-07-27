@@ -30,7 +30,7 @@ class Products:
             for cell in row:
                 value = cell.value
                 if value is None:
-                    break
+                    continue
                 key = self.parser.get_key(cell)
                 if value == "true":
                     value = True
