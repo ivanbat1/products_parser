@@ -1,10 +1,10 @@
-## Installation
+# Installation
 
-####create virtual environment
+######create virtual environment
 ```bash
 python -m venv env
 ```
-####activate env 
+######activate env 
 
 on **Linux/Mac**
 
@@ -18,13 +18,13 @@ activate
 cd ..\..\
 ```
 
-####install packages from req.txt file
+######install packages from req.txt file
 
 ```bash
 pip install -r req.txt
 ```
 
-## Run
+# Run
 
 ```bash
 python parser.py
