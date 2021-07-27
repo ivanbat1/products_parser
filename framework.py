@@ -2,6 +2,8 @@ import logging
 import requests
 from constants import URL_NAME, AUTH, IMAGES_FILE_PATH
 from google_service import GoogleAPIService
+from werkzeug.utils import secure_filename
+
 
 logger = logging.getLogger("root")
 
@@ -64,6 +66,14 @@ class Parser:
                                      )
         if response.status_code == 201:
             local_catalog_image_url = response.json().get('data', {}).get('url')
+            logger.info(response.json())
+            return local_catalog_image_url
+        elif response.status_code == 200 and "Image already exists" in response.json().get("error", {}).get("message", ""):
+            filename = secure_filename(image_name).lower()
+            image_id = filename.replace('.', '_')
+            url_get_image = "{}/{}".format(self.url_images, image_id)
+            image_data = self.session.get(url_get_image)
+            local_catalog_image_url = image_data.json().get('data', {}).get('url')
             logger.info(response.json())
             return local_catalog_image_url
         else:
