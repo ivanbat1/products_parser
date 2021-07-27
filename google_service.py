@@ -10,6 +10,8 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 # If modifying these scopes, delete the file token.json.
+from constants import IMAGES_FILE_PATH
+
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 logger = logging.getLogger("root")
@@ -41,7 +43,7 @@ class GoogleAPIServie:
         request = self.google_service.files().get_media(fileId=image_id)
         image_data = self.google_service.files().get(fileId=image_id).execute()
         image_name = image_data["name"]
-        fh = io.FileIO('images/' + image_name, mode='wb')
+        fh = io.FileIO(IMAGES_FILE_PATH + image_name, mode='wb')
         downloader = MediaIoBaseDownload(fh, request)
         done = False
         while done is False:

@@ -1,6 +1,6 @@
 import logging
 import requests
-from constants import URL_NAME, AUTH
+from constants import URL_NAME, AUTH, IMAGES_FILE_PATH
 from google_service import GoogleAPIServie
 
 logger = logging.getLogger("root")
@@ -47,7 +47,8 @@ class Parser:
         else:
             return self.parse_key_without_specifics
 
-    def load_image_to_catalog(self, title):
+    def load_image_to_catalog(self, image_name):
+        title = image_name.split(".")[0]
         url = self.url_images
         image_data = {
             "title": title,
@@ -56,7 +57,7 @@ class Parser:
         logger.info(image_data)
         response = self.session.post(url,
                                      data=image_data,
-                                     files={"image": open('images/' + title, 'rb')}
+                                     files={"image": open(IMAGES_FILE_PATH + image_name, 'rb')}
                                      )
         if response.status_code == 201:
             local_catalog_image_url = response.json().get('data', {}).get('uri')
