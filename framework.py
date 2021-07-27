@@ -55,12 +55,15 @@ class Parser:
             "sizes": self.sizes,
         }
         logger.info(image_data)
+        image_tuple = (image_name,
+                       open(IMAGES_FILE_PATH + image_name, 'rb').read(),
+                       f'image/{image_name.split(".")[-1]}')
         response = self.session.post(url,
                                      data=image_data,
-                                     files={"image": open(IMAGES_FILE_PATH + image_name, 'rb')}
+                                     files={"image": image_tuple}
                                      )
         if response.status_code == 201:
-            local_catalog_image_url = response.json().get('data', {}).get('uri')
+            local_catalog_image_url = response.json().get('data', {}).get('url')
             logger.info(response.json())
             return local_catalog_image_url
         else:
