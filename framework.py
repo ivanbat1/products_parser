@@ -57,9 +57,11 @@ class Parser:
             "sizes": self.sizes,
         }
         logger.info(image_data)
+        image_type = image_name.split(".")[-1]
+        mime_type = f'image/{image_type}'
         image_tuple = (image_name,
                        open(IMAGES_FILE_PATH + image_name, 'rb').read(),
-                       f'image/{image_name.split(".")[-1]}')
+                       mime_type)
         response = self.session.post(url,
                                      data=image_data,
                                      files={"image": image_tuple}
@@ -72,8 +74,8 @@ class Parser:
             filename = secure_filename(image_name).lower()
             image_id = filename.replace('.', '_')
             url_get_image = "{}/{}".format(self.url_images, image_id)
-            image_data = self.session.get(url_get_image)
-            local_catalog_image_url = image_data.json().get('data', {}).get('url')
+            response = self.session.get(url_get_image)
+            local_catalog_image_url = response.json().get('data', {}).get('url')
             logger.info(response.json())
             return local_catalog_image_url
         else:
