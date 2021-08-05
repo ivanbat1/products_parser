@@ -2,7 +2,7 @@ import json
 
 import requests
 from openpyxl import load_workbook
-from constants import URL_NAME, XLSX_FILE_NAME, AUTH, DEBUG
+from constants import URL_NAME, XLSX_FILE_NAME, AUTH, DEBUG, SHEET_NAME
 from framework import Parser
 import logging.config
 
@@ -68,8 +68,8 @@ class Products:
 
 if __name__ == "__main__":
     wb = load_workbook(filename=XLSX_FILE_NAME)
-    for ws in wb:
-        products = Products(ws)
-        products.parse_file()
-        products.create_items()
+    ws = wb[SHEET_NAME]
+    products = Products(ws)
+    products.parse_file()
+    products.create_items()
 

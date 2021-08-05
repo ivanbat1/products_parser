@@ -83,15 +83,20 @@ class Parser:
             return
 
     def parse_image_from_google_drive(self, key, value):
-        image_id = value.split('id=')[-1]
-        try:
-            image_name = self.google_service.get_image(image_id)
-        except Exception as ex:
-            logger.error(ex)
-            return
-        catalog_image_path = self.load_image_to_catalog(image_name)
+        if "drive.google.com" in value:
+            image_id = value.split('id=')[-1]
+            try:
+                image_name = self.google_service.get_image(image_id)
+            except Exception as ex:
+                logger.error(ex)
+                return
+            catalog_image_path = self.load_image_to_catalog(image_name)
+        else:
+            catalog_image_path = value
+
         if catalog_image_path is None:
             return
+
         self.json_data.setdefault("images", [])
         image_data = {
             "url": catalog_image_path,
