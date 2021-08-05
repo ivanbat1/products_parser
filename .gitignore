@@ -3,5 +3,5 @@ __pycache__/
 env/
 *.xlsx
 
-constants.py
+local_constants.py
 *.json
