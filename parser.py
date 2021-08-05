@@ -60,6 +60,7 @@ class Products:
                 json_resp = response.json()
             except Exception as error:
                 logger.exception(error)
+                print(response.content)
                 continue
             message = json_resp.get("error", {}).get("message")
             if response.status_code == 201:
