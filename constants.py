@@ -8,6 +8,6 @@ IMAGES_FILE_PATH = 'PATH TO IMAGE FILE'
 DEBUG = True  # for developers
 
 try:
-    import local_constants
+    from local_constants import *
 except ImportError:
     pass

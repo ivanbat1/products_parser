@@ -5,3 +5,5 @@ env/
 
 local_constants.py
 *.json
+images/
+logs/

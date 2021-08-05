@@ -56,7 +56,11 @@ class Products:
             if response.status_code >= 500:
                 logger.info("put product status_code {}".format(response.status_code))
                 continue
-            json_resp = response.json()
+            try:
+                json_resp = response.json()
+            except Exception as error:
+                logger.exception(error)
+                continue
             message = json_resp.get("error", {}).get("message")
             if response.status_code == 201:
                 access_token = json_resp.get("access", {}).get("token")
