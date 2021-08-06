@@ -7,7 +7,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from constants import IMAGES_FILE_PATH
+from constants import IMAGES_FILE_PATH, API_KEY
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
@@ -34,7 +34,7 @@ class GoogleAPIService:
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
 
-        self.google_service = build('drive', 'v3', credentials=creds)
+        self.google_service = build('drive', 'v3', credentials=creds, developerKey=API_KEY)
 
     def get_image(self, image_id):
         request = self.google_service.files().get_media(fileId=image_id)
