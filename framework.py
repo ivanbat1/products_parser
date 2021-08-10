@@ -1,20 +1,18 @@
 import logging
 import requests
-from constants import URL_NAME, AUTH, IMAGES_FILE_PATH
+from constants import URL_NAME, AUTH
 from google_service import GoogleAPIService
-from werkzeug.utils import secure_filename
-
+from parse_images import ParserImage
 
 logger = logging.getLogger("root")
 
 
 class Parser:
+    sizes = "800x800"
     json_data = {}
     json_access = {}
     requirement_responses_code_by_requirement = {}
-    sizes = "800x800"
     url_profiles = URL_NAME + "profiles/{profile_id}"
-    url_images = URL_NAME + "images"
 
     def __init__(self, ws):
         self.ws = ws
@@ -49,54 +47,10 @@ class Parser:
         else:
             return self.parse_key_without_specifics
 
-    def load_image_to_catalog(self, image_name):
-        title = image_name.split(".")[0]
-        url = self.url_images
-        image_data = {
-            "title": title,
-            "sizes": self.sizes,
-        }
-        logger.info(image_data)
-        image_type = image_name.split(".")[-1]
-        mime_type = f'image/{image_type}'
-        image_tuple = (image_name,
-                       open(IMAGES_FILE_PATH + image_name, 'rb').read(),
-                       mime_type)
-        response = self.session.post(url,
-                                     data=image_data,
-                                     files={"image": image_tuple}
-                                     )
-        if response.status_code == 201:
-            local_catalog_image_url = response.json().get('data', {}).get('url')
-            logger.info(response.json())
-            return local_catalog_image_url
-        elif "Image already exists" in response.json().get("error", {}).get("message", ""):
-            filename = secure_filename(image_name).lower()
-            image_id = filename.replace('.', '_')
-            url_get_image = "{}/{}".format(self.url_images, image_id)
-            response = self.session.get(url_get_image)
-            local_catalog_image_url = response.json().get('data', {}).get('url')
-            logger.info(response.json())
-            return local_catalog_image_url
-        else:
-            logger.info(response.content)
-            return
-
     def parse_image_from_google_drive(self, key, value):
-        if "drive.google.com" in value:
-            image_id = value.split('id=')[-1]
-            try:
-                image_name = self.google_service.get_image(image_id)
-            except Exception as ex:
-                logger.error(ex)
-                return
-            catalog_image_path = self.load_image_to_catalog(image_name)
-        else:
-            catalog_image_path = value
-
+        catalog_image_path = ParserImage(value).get_catalog_image_path()
         if catalog_image_path is None:
             return
-
         self.json_data.setdefault("images", [])
         image_data = {
             "url": catalog_image_path,
