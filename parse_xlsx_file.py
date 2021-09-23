@@ -2,17 +2,16 @@ import logging
 import requests
 from constants import URL_NAME, AUTH
 from google_service import GoogleAPIService
-from parse_images import ParserImage
+from parse_images import Image
 
 logger = logging.getLogger("root")
 
 
-class Parser:
-    sizes = "800x800"
+class ParserXLSXFile:
     json_data = {}
     json_access = {}
     requirement_responses_code_by_requirement = {}
-    url_profiles = URL_NAME + "profiles/{profile_id}"
+    profiles_url = URL_NAME + "profiles/{profile_id}"
 
     def __init__(self, ws):
         self.ws = ws
@@ -33,7 +32,7 @@ class Parser:
         if key is None:
             return
         elif "image" in key:
-            return self.parse_image_from_google_drive
+            return self.parse_image_url
         elif "access" in key:
             return self.parse_access
         elif key == "relatedProfile":
@@ -47,15 +46,17 @@ class Parser:
         else:
             return self.parse_key_without_specifics
 
-    def parse_image_from_google_drive(self, key, value):
-        catalog_image_path = ParserImage(value).get_catalog_image_path()
-        if catalog_image_path is None:
+    def parse_image_url(self, key, value):
+        catalog_image_data = Image(value, self.session, self.google_service).get_catalog_image_data()
+        if catalog_image_data is None or all(catalog_image_data):
             return
+        image_url, image_sizes = catalog_image_data
         self.json_data.setdefault("images", [])
         image_data = {
-            "url": catalog_image_path,
-            "sizes": self.sizes
+            "url": image_url,
+            "sizes": image_sizes
         }
+        print(image_data)
         self.json_data["images"].append(image_data)
 
     def parse_requirement_responses(self, key, value):
@@ -92,7 +93,7 @@ class Parser:
             self.json_data.setdefault(key, value)
 
     def parse_related_profile(self, key, value):
-        url = self.url_profiles.format(profile_id=value)
+        url = self.profiles_url.format(profile_id=value)
         response = self.session.get(url)
         if response.status_code != 200:
             logger.info("profile {} status_code = {}".format(url, response.status_code))

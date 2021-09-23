@@ -1,9 +1,8 @@
 import json
-
 import requests
 from openpyxl import load_workbook
 from constants import URL_NAME, XLSX_FILE_NAME, AUTH, DEBUG, SHEET_NAME
-from framework import Parser
+from parse_xlsx_file import ParserXLSXFile
 import logging.config
 
 if DEBUG:
@@ -19,7 +18,7 @@ class Products:
     
     def __init__(self, ws):
         self.ws = ws
-        self.parser = Parser(ws)
+        self.parser = ParserXLSXFile(ws)
         self.session = requests.Session()
         self.session.auth = AUTH
 
